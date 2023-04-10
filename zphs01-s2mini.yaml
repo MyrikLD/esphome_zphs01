@@ -1,0 +1,102 @@
+esphome:
+  name: zphs01-s2mini
+  friendly_name: ZPHS01_s2mini
+  includes:
+    - zphs01.h
+
+esp32:
+  board: esp32-s2-saola-1
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "SECRET"
+
+ota:
+  password: "SECRET"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Zphs01-S2Mini Fallback Hotspot"
+    password: "SECRET"
+
+captive_portal:
+    
+
+uart:
+  tx_pin: 16
+  rx_pin: 18
+  baud_rate: 9600
+  id: uart_bus
+  debug:
+
+switch:
+  - platform: template
+    id: dust_measurement_switch
+    name: "Dust measurement"
+    icon: mdi:electric-switch
+    # assumed_state: true
+    turn_on_action:
+      - uart.write: [0x11,0x03,0x0C,0x02,0x1E,0xC0]
+    turn_off_action:
+      - uart.write: [0x11,0x03,0x0C,0x01,0x1E,0xC1]
+
+button:
+  - platform: template
+    id: start_measurement_switch
+    name: "Start measurement"
+    on_press:
+      - uart.write: [0x11,0x02,0x01,0x00,0xEC]
+
+sensor:
+- platform: custom
+  lambda: |-
+    auto my_sensor = new ZPHS01(id(uart_bus));
+    App.register_component(my_sensor);
+    return {
+      my_sensor->sensor_co2, 
+      my_sensor->sensor_voc,
+      my_sensor->sensor_humidity,
+      my_sensor->sensor_temperature,
+      my_sensor->sensor_pm25
+    };
+
+  sensors:
+  - name: "CO2 Sensor"
+    unit_of_measurement: ppm
+    accuracy_decimals: 0
+    id: sensor_co2
+    device_class: "carbon_dioxide"
+
+  - name: "VOC Sensor"
+    # unit_of_measurement: °C
+    accuracy_decimals: 0
+    id: sensor_voc
+    device_class: "volatile_organic_compounds"
+    
+  - name: "Humidity Sensor"
+    unit_of_measurement: "%"
+    accuracy_decimals: 0
+    id: sensor_humidity
+    device_class: "humidity"
+
+  - name: "Temperature Sensor"
+    unit_of_measurement: °C
+    accuracy_decimals: 0
+    id: sensor_temperature
+    device_class: "temperature"
+    
+  - name: "PM2.5 Sensor"
+    unit_of_measurement: µg/m³
+    accuracy_decimals: 0
+    id: sensor_pm25
+    device_class: "pm25"
