@@ -56,6 +56,11 @@ button:
     name: "Start measurement"
     on_press:
       - uart.write: [0x11,0x02,0x01,0x00,0xEC]
+  - platform: template
+    id: zero_point
+    name: "Zero Point Calibration"
+    on_press:
+      - uart.write: [0x11,0x03,0x03,0x01,0x90,0x58]
 
 sensor:
 - platform: custom
